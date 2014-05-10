@@ -264,6 +264,7 @@ extern unsigned int get_tamper_sf(void);
 #define S2W_PWRKEY_DUR 60
 #define GEST_TIMEOUT 70
 #define WAKE_GESTURE 0x0b
+#define WAKE_GESTURE2 0x07
 
 static cputime64_t prev_time;
 static int dt_prev_x = 0, dt_prev_y = 0;
@@ -285,7 +286,7 @@ static int vib_strength = 20;
 
 static struct wake_lock wg_wakelock;
 extern void proximity_set(int enabled);
-extern int pocket_detection_check(void);
+extern int check_pocket;
 extern struct vib_trigger *vib_trigger;
 static struct input_dev *gesture_dev;
 
@@ -297,7 +298,7 @@ void sweep2wake_setdev(struct input_dev *input_device)
 
 static void report_gesture(int gest)
 {
-	if (pocket_detect && !pocket_detection_check())
+	if (pocket_detect && !check_pocket)
 		return;
 
         pwrtrigger_time[1] = pwrtrigger_time[0];
@@ -308,6 +309,7 @@ static void report_gesture(int gest)
 
 	vib_trigger_event(vib_trigger, vib_strength);
 	input_report_rel(gesture_dev, WAKE_GESTURE, gest);
+	input_report_rel(gesture_dev, WAKE_GESTURE2, gest);
 	input_sync(gesture_dev);
 }
 
@@ -329,7 +331,7 @@ static void sweep2wake_presspwr(struct work_struct *sweep2wake_presspwr_work)
 }
 static DECLARE_WORK(sweep2wake_presspwr_work, sweep2wake_presspwr);
 
-static void sweep2wake_pwrtrigger(void)
+static void sweep2wake_pwrtrigger(int wake)
 {
         pwrtrigger_time[1] = pwrtrigger_time[0];
         pwrtrigger_time[0] = jiffies;	
@@ -337,7 +339,7 @@ static void sweep2wake_pwrtrigger(void)
 	if (pwrtrigger_time[0] - pwrtrigger_time[1] < GEST_TIMEOUT)
 		return;
 
-	if (pocket_detect && !pocket_detection_check())
+	if (pocket_detect && wake && !check_pocket)
 		return;
 
 	vib_trigger_event(vib_trigger, vib_strength);
@@ -365,6 +367,9 @@ static void reset_dt2w(void)
 
 static void dt2w_func(int x, int y, cputime64_t trigger_time)
 {
+	if (phone_call_stat == 1)
+		return;
+
         if ((x > 0 && x < 150) || x > 1470 || y > 2880) {
                 reset_dt2w();
 		dt2w_reset_handler();
@@ -383,12 +388,12 @@ static void dt2w_func(int x, int y, cputime64_t trigger_time)
                 if (((abs(x - dt_prev_x) < DT2W_DELTA) && (abs(y - dt_prev_y) < DT2W_DELTA))
 						|| (dt_prev_x == 0 && dt_prev_y == 0)) {
                         reset_dt2w();
-			pr_debug("[WG]: doubletap\n");
+			pr_info("[WG]: doubletap\n");
 			wake_lock_timeout(&wg_wakelock, HZ/2);
 			if (dt2w_switch && gestures_switch) {
 				report_gesture(15);
 			} else if (dt2w_switch) {
-	                        sweep2wake_pwrtrigger();
+	                        sweep2wake_pwrtrigger(1);
 			}
 			return;
                 } else {
@@ -433,12 +438,12 @@ static void sweep2wake_vert_func(int x, int y)
 					if (y < prevy) {
 						if (y < (nexty - 160)) {
 							if (exec_county) {
-								pr_debug("[WG]: sweep up\n");
+								pr_info("[WG]: sweep up\n");
 								wake_lock_timeout(&wg_wakelock, HZ/2);
 								if (gestures_switch) {
 									report_gesture(2);
 								} else {
-						                        sweep2wake_pwrtrigger();
+						                        sweep2wake_pwrtrigger(1);
 								}
 								exec_county = false;
 							}
@@ -460,12 +465,12 @@ static void sweep2wake_vert_func(int x, int y)
 					if (y > prevy) {
 						if (y > (nexty + 160)) {
 							if (exec_county) {
-								pr_debug("[WG]: sweep down\n");
+								pr_info("[WG]: sweep down\n");
 								wake_lock_timeout(&wg_wakelock, HZ/2);
 								if (gestures_switch) {
 									report_gesture(3);
 								} else {
-						                        sweep2wake_pwrtrigger();
+						                        sweep2wake_pwrtrigger(1);
 								}
 								exec_county = false;
 							}
@@ -508,12 +513,12 @@ static void sweep2wake_horiz_func(int x, int y, int wake)
 				if (x > prevx) {
 					if (x > (nextx + 180)) {
 						if (exec_countx) {
-							pr_debug("[WG]: sweep right\n");
+							pr_info("[WG]: sweep right\n");
 							wake_lock_timeout(&wg_wakelock, HZ/2);
 							if (gestures_switch && wake) {
 								report_gesture(5);
 							} else {
-						        	sweep2wake_pwrtrigger();
+						        	sweep2wake_pwrtrigger(wake);
 							}
 							exec_countx = false;
 						}
@@ -535,12 +540,12 @@ static void sweep2wake_horiz_func(int x, int y, int wake)
 				if (x < prevx) {
 					if (x < (nextx - 180)) {
 						if (exec_countx) {
-							pr_debug("[WG]: sweep left\n");
+							pr_info("[WG]: sweep left\n");
 							wake_lock_timeout(&wg_wakelock, HZ/2);
 							if (gestures_switch && wake) {
 								report_gesture(4);
 							} else {
-						        	sweep2wake_pwrtrigger();
+						        	sweep2wake_pwrtrigger(wake);
 							}
 							exec_countx = false;
 						}
@@ -4600,7 +4605,7 @@ static int synaptics_ts_suspend(struct i2c_client *client)
 #ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_WAKE_GESTURES
 	}
 
-	if (pocket_detect && (s2w_switch || dt2w_switch || gestures_switch))
+	if (pocket_detect && !phone_call_stat && (s2w_switch || dt2w_switch || gestures_switch))
 		proximity_set(1);
 	scr_suspended = true;
 #endif
@@ -4707,7 +4712,7 @@ static int synaptics_ts_resume(struct i2c_client *client)
 		gestures_switch_changed = false;
 	}
 
-	if (pocket_detect && (s2w_switch || dt2w_switch || gestures_switch))
+	if (pocket_detect && !phone_call_stat && (s2w_switch || dt2w_switch || gestures_switch))
 		proximity_set(0);
 
 	scr_suspended = false;

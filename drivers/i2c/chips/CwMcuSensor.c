@@ -892,14 +892,14 @@ static int get_proximity(struct device *dev, struct device_attribute *attr, char
 }
 
 #ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_WAKE_GESTURES
+int check_pocket = 1;
+
 void proximity_set(int enabled)
 {
 	int sensors_id = 4;
 	u8 data;
 	u8 i;
 	int retry = 0;
-	int rc = 0;
-	u8 data8[8] = {0};
 
 	for (retry = 0; retry < ACTIVE_RETRY_TIMES; retry++) {
 		if (mcu_data->resume_done != 1)
@@ -915,12 +915,6 @@ void proximity_set(int enabled)
 	if (probe_i2c_fail) {
 		I("%s++: probe_i2c_fail retrun 0\n", __func__);
 		return;
-	}
-
-	if (enabled == 0) {
-		rc = CWMCU_i2c_read(mcu_data, CW_I2C_REG_SENSORS_CALIBRATOR_DEBUG_PROXIMITY, data8, 8);
-		I("%s: AUtoK: Threshold = %d, SADC = %d, CompensationValue = %d\n", __func__, data8[5], data8[4], data8[6]);
-		I("%s: AutoK: QueueIsEmpty = %d, Queue = %d %d %d %d\n", __func__, data8[7], data8[0], data8[1], data8[2], data8[3]);
 	}
 
 	if (enabled == 1) {
@@ -939,17 +933,7 @@ void proximity_set(int enabled)
 
 	if ((mcu_data->input != NULL) && (sensors_id == Proximity) && (enabled == 1)) {
 		input_report_abs(mcu_data->input, ABS_DISTANCE, -1);
-		D("%s: Report dummy -1 proximity event\n", __func__);
 	}
-}
-
-int pocket_detection_check(void)
-{
-	u8 data2[2]={0};
-
-	CWMCU_i2c_read(mcu_data, CWSTM32_READ_Proximity, data2, 2);
-	D("%s: %x %x \n",  __func__, data2[0], data2[1]);
-	return data2[0];
 }
 #endif
 
@@ -2520,6 +2504,10 @@ static void cwmcu_irq_work_func(struct work_struct *work)
 			ret = CWMCU_i2c_read(sensor, CWSTM32_READ_Proximity, data, 2);
 			if(data[0] < 2){
 				sensor->sensors_time[Proximity] = sensor->sensors_time[Proximity] -sensor->report_period[Proximity];
+#ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_WAKE_GESTURES
+				check_pocket = data[0];
+#endif
+				p_status = data[0];
 				input_report_abs(sensor->input, ABS_DISTANCE, data[0]);
 				input_sync(sensor->input);
 				D("Proximity interrupt occur value is %d adc is %x ps_calibration is %d\n",data[0],data[1],sensor->ps_calibrated);
