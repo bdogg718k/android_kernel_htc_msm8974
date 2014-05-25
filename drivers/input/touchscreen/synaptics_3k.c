@@ -4619,7 +4619,7 @@ static int synaptics_ts_suspend(struct i2c_client *client)
 
 	}
 #ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_WAKE_GESTURES
-	if (!s2w_switch && !dt2w_switch && !gestures_switch) {
+	if (boot_mode || (!s2w_switch && !dt2w_switch && !gestures_switch)) {
 #endif
 		if (ts->power)
 			ts->power(0);
@@ -4649,7 +4649,7 @@ static int synaptics_ts_suspend(struct i2c_client *client)
 #ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_WAKE_GESTURES
 	}
 
-	if (s2w_switch || dt2w_switch || gestures_switch) {
+	if (!boot_mode && (s2w_switch || dt2w_switch || gestures_switch)) {
 		if (pocket_detect && !phone_call_stat && !boot_mode)
 			proximity_set(1);
 		if (!cam_switch)
@@ -4672,7 +4672,7 @@ static int synaptics_ts_resume(struct i2c_client *client)
 		disable_irq_wake(client->irq);
 	}
 
-	if (!s2w_switch && !dt2w_switch && !gestures_switch) {
+	if (boot_mode || (!s2w_switch && !dt2w_switch && !gestures_switch)) {
 #endif 
 		if (ts->power) {
 			ts->power(1);
