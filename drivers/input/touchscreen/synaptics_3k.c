@@ -2043,7 +2043,7 @@ static ssize_t synaptics_doubletap2wake_dump(struct device *dev, struct device_a
 	return count;
 }
 
-static DEVICE_ATTR(doubletap2wake, (S_IWUSR|S_IRUGO),
+static DEVICE_ATTR(doubletap2wake, 0666,
 	synaptics_doubletap2wake_show, synaptics_doubletap2wake_dump); 
 
 static ssize_t synaptics_wake_gestures_show(struct device *dev,
