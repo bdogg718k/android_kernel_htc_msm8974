@@ -1,11 +1,7 @@
 /*
  * arch/arm/mach-msm/kcal_ctrl.c
  *
- * Copyright (c) 2013, LGE Inc. All rights reserved
- * Copyright (c) 2011-2013, The Linux Foundation. All rights reserved.
- * Copyright (c) 2014 Paul Reioux <reioux@gmail.com>
- * Copyright (c) 2014 Alex Deddo <adeddo27@gmail.com>
- *
+ * Copyright (C) 2014 Savoca
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
