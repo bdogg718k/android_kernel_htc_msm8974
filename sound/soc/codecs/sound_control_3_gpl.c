@@ -48,7 +48,7 @@ static ssize_t cam_mic_gain_show(struct kobject *kobj,
 {
         return sprintf(buf, "%u",
 		taiko_read(fauxsound_codec_ptr,
-			TAIKO_A_CDC_TX6_VOL_CTL_GAIN));
+			TAIKO_A_CDC_TX4_VOL_CTL_GAIN));
 
 }
 
@@ -61,7 +61,7 @@ static ssize_t cam_mic_gain_store(struct kobject *kobj,
 
 	if (calc_checksum(lval, 0, chksum)) {
 		taiko_write(fauxsound_codec_ptr,
-			TAIKO_A_CDC_TX6_VOL_CTL_GAIN, lval);
+			TAIKO_A_CDC_TX4_VOL_CTL_GAIN, lval);
 	}
 	return count;
 }
@@ -71,7 +71,7 @@ static ssize_t mic_gain_show(struct kobject *kobj,
 {
 	return sprintf(buf, "%u",
 		taiko_read(fauxsound_codec_ptr,
-			TAIKO_A_CDC_TX7_VOL_CTL_GAIN));
+			TAIKO_A_CDC_TX3_VOL_CTL_GAIN));
 }
 
 static ssize_t mic_gain_store(struct kobject *kobj,
@@ -83,7 +83,7 @@ static ssize_t mic_gain_store(struct kobject *kobj,
 
 	if (calc_checksum(lval, 0, chksum)) {
 		taiko_write(fauxsound_codec_ptr,
-			TAIKO_A_CDC_TX7_VOL_CTL_GAIN, lval);
+			TAIKO_A_CDC_TX3_VOL_CTL_GAIN, lval);
 	}
 	return count;
 
@@ -121,9 +121,9 @@ static ssize_t headphone_gain_show(struct kobject *kobj,
 {
 	return sprintf(buf, "%u %u",
 			taiko_read(fauxsound_codec_ptr,
-				TAIKO_A_CDC_RX1_VOL_CTL_B2_CTL),
+				TAIKO_A_CDC_RX3_VOL_CTL_B2_CTL),
 			taiko_read(fauxsound_codec_ptr,
-				TAIKO_A_CDC_RX2_VOL_CTL_B2_CTL));
+				TAIKO_A_CDC_RX5_VOL_CTL_B2_CTL));
 }
 
 static ssize_t headphone_gain_store(struct kobject *kobj,
@@ -135,9 +135,9 @@ static ssize_t headphone_gain_store(struct kobject *kobj,
 
 	if (calc_checksum(lval, rval, chksum)) {
 		taiko_write(fauxsound_codec_ptr,
-			TAIKO_A_CDC_RX1_VOL_CTL_B2_CTL, lval);
+			TAIKO_A_CDC_RX3_VOL_CTL_B2_CTL, lval);
 		taiko_write(fauxsound_codec_ptr,
-			TAIKO_A_CDC_RX2_VOL_CTL_B2_CTL, rval);
+			TAIKO_A_CDC_RX5_VOL_CTL_B2_CTL, rval);
 	}
 	return count;
 }
