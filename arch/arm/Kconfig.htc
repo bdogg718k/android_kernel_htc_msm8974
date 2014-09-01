@@ -161,3 +161,8 @@ config HTC_RPM_CMD
 	default n
 	help
 	  This expose HTC RPM command interface for different purpose.
+
+config HTC_POWER_HACK
+       bool "HTC POWER HACK"
+       help
+         Say Y here if HTC POWER HACK

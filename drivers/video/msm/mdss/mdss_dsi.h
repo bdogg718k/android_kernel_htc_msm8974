@@ -81,12 +81,18 @@ enum dsi_panel_bl_ctrl {
 	BL_PWM,
 	BL_WLED,
 	BL_DCS_CMD,
+	BL_I2C,
 	UNKNOWN_CTRL,
 };
 
 enum dsi_ctrl_op_mode {
 	DSI_LP_MODE,
 	DSI_HS_MODE,
+};
+
+enum pwm_ctl {
+	PWM_PMIC = 1,
+	PWM_EXT =2,
 };
 
 #define CTRL_STATE_UNKNOWN		0x00
@@ -300,6 +306,7 @@ struct mdss_dsi_pwrctrl {
 	int (*dsi_regulator_deinit) (struct platform_device *pdev);
 	int (*dsi_power_on) (struct mdss_panel_data *pdata, int enable);
 	void (*dsi_panel_reset) (struct mdss_panel_data *pdata, int enable);
+	void (*bkl_config) (struct mdss_panel_data *pdata, int enable);
 };
 
 enum {
@@ -378,6 +385,8 @@ struct mdss_dsi_ctrl_pdata {
 	int pwm_min;
 	int pwm_default;
 	int pwm_max;
+
+	int pwm_ctl_type;
 
 	int display_on_wait;
 
